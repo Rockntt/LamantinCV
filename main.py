@@ -1,5 +1,5 @@
 import cv2
-import easyocr
+import pytesseract
 
 reader = easyocr.Reader(['en'])
 
