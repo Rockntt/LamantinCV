@@ -1,7 +1,5 @@
 import cv2
-import pytesseract
-
-reader = easyocr.Reader(['en'])
+import pytesseract as tes
 
 cap = cv2.VideoCapture(0)
 
@@ -10,15 +8,15 @@ while True:
     if not ret:
         break
 
-    result = reader.readtext(frame)
+    result = tes.image_to_string(frame, lang='hye')
 
     for detection in result:
         top_left = tuple(detection[0][0])
         bottom_right = tuple(detection[0][2])
         text = detection[1]
         font = cv2.FONT_HERSHEY_SIMPLEX
-        frame = cv2.rectangle(frame, top_left, bottom_right, (0,255,0), 3)
-        frame = cv2.putText(frame, text, top_left, font, 1, (255,255,255), 2, cv2.LINE_AA)
+        frame = cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 3)
+        frame = cv2.putText(frame, text, top_left, font, 1, (255, 255, 255), 2, cv2.LINE_AA)
 
     cv2.imshow('Text Detection', frame)
 
