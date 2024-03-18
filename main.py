@@ -1,26 +1,27 @@
 import cv2
-import pytesseract as tes
+import pytesseract
 
 cap = cv2.VideoCapture(0)
 
-tes.pytesseract.tesseract_cmd = 'Tesseract/tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = 'Tesseract/tesseract.exe'
+
+alphabet1 = "ԽՁՒՅԷՐՏԵԸԻՈՕՊՌՉԺՋՓԹԼԿՃՀՔՖԴՍԱԶՑԳՎԲՆՄՇՂԾ"
+alphabet2 = "ԱԲՑԷՌԵԽՈՒԹԵՅՈՒՄԵՆԻՔՈՒՄեՆԻՅոՒՅուՆԻքՈՒՅոՂՈՒԹՅՈւՆԻ"
 
 while True:
     ret, frame = cap.read()
-    if not ret:
-        break
 
-    result = tes.image_to_string(frame, lang='hye')
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    for detection in result:
-        top_left = tuple(detection[0][0])
-        bottom_right = tuple(detection[0][2])
-        text = detection[1]
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        frame = cv2.rectangle(frame, top_left, bottom_right, (0, 255, 0), 3)
-        frame = cv2.putText(frame, text, top_left, font, 1, (255, 255, 255), 2, cv2.LINE_AA)
+    text_data = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT, lang='hye')
 
-    cv2.imshow('Text Detection', frame)
+    for i in range(len(text_data['text'])):
+        if text_data['text'][i] and any(
+                char in text_data['text'][i] for char in alphabet1):
+            (x, y, w, h) = (text_data['left'][i], text_data['top'][i], text_data['width'][i], text_data['height'][i])
+            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+
+    cv2.imshow('Video', frame)
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
