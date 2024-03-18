@@ -3,6 +3,8 @@ import pytesseract as tes
 
 cap = cv2.VideoCapture(0)
 
+tes.pytesseract.tesseract_cmd = 'Tesseract/tesseract.exe'
+
 while True:
     ret, frame = cap.read()
     if not ret:
