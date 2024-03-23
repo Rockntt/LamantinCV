@@ -27,7 +27,7 @@ while True:
 
     frame_p = frame_preprocessing(frame)
 
-    text_data = pytesseract.image_to_data(frame_p, output_type=pytesseract.Output.DICT, lang='hye', config='--psm 10')
+    text_data = pytesseract.image_to_data(frame_p, output_type=pytesseract.Output.DICT, lang='arm+hye', config='--psm 10')
 
     for i in range(len(text_data['text'])):
         if text_data['text'][i] and any(char in text_data['text'][i] for char in alphabet2):
