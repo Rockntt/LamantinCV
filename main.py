@@ -15,7 +15,7 @@ while True:
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    text_data = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT, lang='arm', config='--psm 6')
+    text_data = pytesseract.image_to_data(gray, output_type=pytesseract.Output.DICT, lang='arm', config='--psm 10')
 
     max_area = 0
     max_rect = None
