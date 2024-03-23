@@ -1,3 +1,5 @@
 opencv-contrib-python
 pytesseract
 tesseract
+PIL
+numpy
