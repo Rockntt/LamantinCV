@@ -35,14 +35,13 @@ Tesseract-OCR предустановлен в репозитории, поэто
 ![example.gif](readme_assets/example.gif)
 
 
-#### Остались вопросы? Задайте их по ниже
+#### Остались вопросы? Задайте их ниже
 
 <a href="https://discordapp.com/users/1184134942326804595" target="_blank">
   <img src="https://img.shields.io/badge/Discord-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white" alt="Discord">
 </a>
 <a href="https://t.me/Rockntt" target="_blank">
-  <img src="https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white
-" alt="Telegram">
+  <img src="https://img.shields.io/badge/Telegram-2CA5E0?style=for-the-badge&logo=telegram&logoColor=white" alt="Telegram">
 </a>
 
 
