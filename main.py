@@ -4,22 +4,25 @@
 """
 Подключение необходимых библиотек (pip install -r requirements.txt)
 """
+import sys
+
 import cv2
 import numpy as np
 import pytesseract
 from PIL import ImageFont, ImageDraw, Image
 
-# Инициализация камеры
-cap = cv2.VideoCapture(0)
 
-# Инициализация бинарника установленного Tesseract-OCR
-pytesseract.pytesseract.tesseract_cmd = 'Tesseract-OCR/tesseract.exe'
-
-# Список букв армянского алфавита для сравнения вывода
-ALPHABET = "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔ"
-
-# Инициализация шрифта, поддерживающего Unicode (для вывода армянских букв)
-UNICODE_FONT = ImageFont.truetype("FreeSerif.ttf", 130)
+def get_cap():
+    """
+    Функция get_cap() возвращает объект capture для работы с камерой
+    """
+    try:
+        capture = cv2.VideoCapture(0)  # Assuming camera index 0
+        if not capture.isOpened():
+            raise RuntimeError("Camera not found. Check that your camera is connected.")
+    except RuntimeError:
+        sys.exit(1)
+    return capture
 
 
 def frame_preprocessing(f):
@@ -36,6 +39,18 @@ def frame_preprocessing(f):
     inverted_f = 255 - thresh_f
     return inverted_f
 
+
+# Инициализация бинарника установленного Tesseract-OCR
+pytesseract.pytesseract.tesseract_cmd = 'Tesseract-OCR/tesseract.exe'
+
+# Список букв армянского алфавита для сравнения вывода
+ALPHABET = "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔ"
+
+# Инициализация шрифта, поддерживающего Unicode (для вывода армянских букв)
+UNICODE_FONT = ImageFont.truetype("FreeSerif.ttf", 130)
+
+# Инициализация камеры
+cap = get_cap()
 
 # Цикл обработки кадров
 while True:
