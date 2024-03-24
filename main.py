@@ -47,7 +47,7 @@ pytesseract.pytesseract.tesseract_cmd = 'Tesseract-OCR/tesseract.exe'
 ALPHABET = "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒՓՔ"
 
 # Инициализация шрифта, поддерживающего Unicode (для вывода армянских букв)
-UNICODE_FONT = ImageFont.truetype("FreeSerif.ttf", 130)
+UNICODE_FONT = ImageFont.truetype("FreeSerif.ttf", 200)
 
 # Инициализация камеры
 cap = get_cap()
@@ -67,21 +67,26 @@ while True:
 
     for i in range(len(text_data['text'])):
         if len(text_data['text'][i]) == 1 and text_data['text'][i] in ALPHABET:
-            (x, y, w, h) = (text_data['left'][i],
-                            text_data['top'][i],
-                            text_data['width'][i],
-                            text_data['height'][i])
-            # print(text_data['text'][i], w, h) - Можно использовать для отладки
+            (x, y, w, h, conf) = (text_data['left'][i],
+                                  text_data['top'][i],
+                                  text_data['width'][i],
+                                  text_data['height'][i],
+                                  text_data['conf'][i])
 
             # Отрисовка сектора с найденным текстом. Отключено, поскольку бесполезно для задачи,
             # поскольку Tesseract часто возвращает сектор по площади больший, чем сама буква в кадре
             # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 4)
 
             # Отрисовка распознанной буквы в координатах, переданных из image_to_data()
-            img_pil = Image.fromarray(frame)
-            draw = ImageDraw.Draw(img_pil)
-            draw.text((x, y), text_data['text'][i], font=UNICODE_FONT, fill=(255, 255, 0, 0))
-            frame = np.array(img_pil)
+            if conf > 85:  # Вероятность успеха больше 85%
+                print(text_data['text'][i], conf)
+                img_pil = Image.fromarray(frame)
+                draw = ImageDraw.Draw(img_pil)
+                draw.text((x - 80, y - 80),
+                          text_data['text'][i],
+                          font=UNICODE_FONT,
+                          fill=(87, 87, 87, 0))
+                frame = np.array(img_pil)
 
     # Отображаются 2 потока: 1) с распознаванием; 2) без, но обработанный
     cv2.imshow('Video', frame)
