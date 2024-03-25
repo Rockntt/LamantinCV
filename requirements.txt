@@ -3,3 +3,4 @@ pytesseract
 tesseract
 pillow
 numpy
+imutils
