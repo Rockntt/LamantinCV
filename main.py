@@ -13,47 +13,62 @@ from PIL import ImageFont, ImageDraw, Image
 import imutils
 
 
-def crop_by_color(frame, height, width, color=(255, 255, 255)):
-    cnts = cv2.findContours(frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+def crop_by_color(_frame, height, width):
+    """
+    Функция crop_by_color() обрезает изображение до прямоугольника заданного цвета
+    :param _frame: кадр для обрезки
+    :param height: высота выходного кадра
+    :param width: ширина выходного кадра
+    :return: обрезанный кадр
+    """
+
+    # Ищем контур прямоугольника
+    cnts = cv2.findContours(_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
     cnts = imutils.grab_contours(cnts)
     c = max(cnts, key=cv2.contourArea)
-    x, y, w, h = cv2.boundingRect(c)
+    _x, _y, _w, _h = cv2.boundingRect(c)
 
-    # Crop the bounding rectangle out of img
-    frame = frame[y:y + h, x:x + w]
-    return cv2.resize(frame, (width, height))
+    # Обрезаем изображение по координатам прямоугольника
+    _frame = _frame[_y:_y + _h, _x:_x + _w]
+    return cv2.resize(_frame, (width, height))
+
 
 def get_cap():
     """
     Функция get_cap() возвращает объект capture для работы с камерой
     """
     try:
-        capture = cv2.VideoCapture(0)  # Assuming camera index 0
-        ret, frame = capture.read()
+        capture = cv2.VideoCapture(0)
+        _ret, _frame = capture.read()
         height, width, _ = frame.shape
-        if not capture.isOpened():
+        if not capture.isOpened():  # Проверка открытия камеры
             raise RuntimeError("Camera not found. Check that your camera is connected.")
-    except RuntimeError:
+    except RuntimeError:  # Обработка ситуация отсутствия камеры
         sys.exit(1)
     return capture, height, width
 
 
-def frame_preprocessing(frame, h, w, resize_multiplier=1.5):
+def frame_preprocessing(_frame, height, width, resize_multiplier=1.5):
     """
-    Функция frame_preprocessing обрабатывает изображение, делая его более пригодным для OCR
-    Параметры:
-        f: Изображение, которое нужно обработать
-    Возвращает:
-        preprocessed_frame: Обработанное изображение
+        Функция frame_preprocessing обрабатывает изображение, делая его более пригодным для OCR
+        :param _frame: кадр, который нужно обработать
+        :param height: высота выходного кадра
+        :param width: ширина выходного кадра
+        :param resize_multiplier: коэффициент масштабирования
+        :return: обработанный кадр
     """
 
-    frame = cv2.GaussianBlur(frame, (7, 7), 0)
-    gray_f = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    _frame = cv2.GaussianBlur(_frame, (7, 7), 0)
+    gray_f = cv2.cvtColor(_frame, cv2.COLOR_BGR2GRAY)
     thresh_f = cv2.threshold(gray_f, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
     preprocessed_frame = 255 - thresh_f
     if resize_multiplier != 1:
-        return cv2.resize(crop_by_color(preprocessed_frame, h, w), None, fx=resize_multiplier, fy=resize_multiplier, interpolation=cv2.INTER_AREA)
-    return crop_by_color(preprocessed_frame, h, w)
+        return cv2.resize(crop_by_color(preprocessed_frame, height, width),
+                          None,
+                          fx=resize_multiplier,
+                          fy=resize_multiplier,
+                          interpolation=cv2.INTER_AREA)
+    return crop_by_color(preprocessed_frame, height, width)
 
 
 # Инициализация бинарника установленного Tesseract-OCR
