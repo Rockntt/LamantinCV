@@ -110,7 +110,10 @@ while True:
 
             # Отрисовка распознанной буквы в координатах, переданных из image_to_data()
             if conf > 80:  # Вероятность успеха больше 80%
-                print(text_data['text'][i], conf)
+
+                # Информация об успешных распознаваняих
+                # print(f"Recognized {text_data['text'][i]} with {conf}% confidence")
+
                 img_pil = Image.fromarray(frame)
                 draw = ImageDraw.Draw(img_pil)
                 draw.text((x - 80, y - 80),
@@ -118,8 +121,9 @@ while True:
                           font=UNICODE_FONT,
                           fill=(87, 87, 87, 0))
                 frame = np.array(img_pil)
-            else:
-                print(f"Tried to recognize {text_data['text'][i]} but {conf}")
+            # Информация об ошибочных распознаваниях
+            # else:
+            #     print(f"Tried to recognize {text_data['text'][i]} but {conf}")
 
     # Отображаются 2 потока: 1) с распознаванием; 2) без, но обработанный
     cv2.imshow('Video', frame)
