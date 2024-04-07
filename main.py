@@ -40,7 +40,7 @@ def get_cap():
     try:
         capture = cv2.VideoCapture(0)
         _ret, _frame = capture.read()
-        height, width, _ = frame.shape
+        height, width, _ = _frame.shape
         if not capture.isOpened():  # Проверка открытия камеры
             raise RuntimeError("Camera not found. Check that your camera is connected.")
     except RuntimeError:  # Обработка ситуация отсутствия камеры
