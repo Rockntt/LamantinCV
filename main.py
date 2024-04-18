@@ -7,67 +7,72 @@
 import sys
 
 import cv2
-import numpy as np
-import pytesseract
-from PIL import ImageFont, ImageDraw, Image
 import imutils
+import pytesseract
+import numpy as np
+from PIL import ImageFont, ImageDraw, Image
 
 
-def crop_by_color(_frame, height, width):
+def crop_by_color(input_frame, output_height, output_width):
     """
-    Функция crop_by_color() обрезает изображение до прямоугольника заданного цвета
-    :param _frame: кадр для обрезки
-    :param height: высота выходного кадра
-    :param width: ширина выходного кадра
-    :return: обрезанный кадр
+        Функция crop_by_color() обрезает изображение до прямоугольника заданного цвета
+        :param input_frame: кадр для обрезки
+        :param output_height: высота выходного кадра
+        :param output_width: ширина выходного кадра
+        :return: обрезанный кадр
     """
-
-    # Ищем контур прямоугольника
-    cnts = cv2.findContours(_frame, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
-    cnts = imutils.grab_contours(cnts)
-    c = max(cnts, key=cv2.contourArea)
-    _x, _y, _w, _h = cv2.boundingRect(c)
-
-    # Обрезаем изображение по координатам прямоугольника
-    _frame = _frame[_y:_y + _h, _x:_x + _w]
-    return cv2.resize(_frame, (width, height))
+    contours = cv2.findContours(input_frame,
+                                cv2.RETR_EXTERNAL,
+                                cv2.CHAIN_APPROX_NONE)  # Нахождение контуров в кадре
+    contours = imutils.grab_contours(contours)
+    largest_contour = max(contours, key=cv2.contourArea)  # Нахождение самого большого контура
+    rect_x, rect_y, rect_w, rect_h = cv2.boundingRect(largest_contour)  # Определение прямоугольника
+    cropped_frame = frame[rect_y:rect_y + rect_h, rect_x:rect_x + rect_w]  # Обрезка кадра
+    return cv2.resize(cropped_frame, (output_width, output_height))
 
 
 def get_cap():
     """
-    Функция get_cap() возвращает объект capture для работы с камерой
+        Функция get_cap() возвращает объект capture для работы с камерой
     """
     try:
-        capture = cv2.VideoCapture(0)
+        capture = cv2.VideoCapture(0)  # Захват камеры 0
         _ret, _frame = capture.read()
         height, width, _ = _frame.shape
         if not capture.isOpened():  # Проверка открытия камеры
-            raise RuntimeError("Camera not found. Check that your camera is connected.")
+            raise RuntimeError("Camera not found. Check that your camera is connected properly.")
     except RuntimeError:  # Обработка ситуация отсутствия камеры
         sys.exit(1)
     return capture, height, width
 
 
-def frame_preprocessing(_frame, height, width, resize_multiplier=1.5):
+def frame_preprocessing(input_frame, height, width, resize_multiplier=1.5):
     """
         Функция frame_preprocessing обрабатывает изображение, делая его более пригодным для OCR
-        :param _frame: кадр, который нужно обработать
+        :param input_frame: кадр, который нужно обработать
         :param height: высота выходного кадра
         :param width: ширина выходного кадра
         :param resize_multiplier: коэффициент масштабирования
         :return: обработанный кадр
     """
-
-    _frame = cv2.GaussianBlur(_frame, (7, 7), 0)
-    gray_f = cv2.cvtColor(_frame, cv2.COLOR_BGR2GRAY)
-    thresh_f = cv2.threshold(gray_f, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-    preprocessed_frame = 255 - thresh_f
-    if resize_multiplier != 1:
-        return cv2.resize(crop_by_color(preprocessed_frame, height, width),
-                          None,
-                          fx=resize_multiplier,
-                          fy=resize_multiplier,
-                          interpolation=cv2.INTER_AREA)
+    input_frame = cv2.GaussianBlur(input_frame, (7, 7), 0)  # Уменьшение резкости
+    gray_frame = cv2.cvtColor(input_frame, cv2.COLOR_BGR2GRAY)  # Конвертация в оттенки серого
+    # Применение пороговой бинаризации
+    thresh_frame = cv2.threshold(gray_frame,
+                                 0,
+                                 255,
+                                 cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+    preprocessed_frame = 255 - thresh_frame  # Обратная бинаризация
+    if resize_multiplier != 1.0:
+        resized_frame = cv2.resize(crop_by_color(
+            preprocessed_frame,
+            height,
+            width),  # Обрезка и масштабирование
+            None,
+            fx=resize_multiplier,
+            fy=resize_multiplier,
+            interpolation=cv2.INTER_AREA)
+        return resized_frame
     return crop_by_color(preprocessed_frame, height, width)
 
 
@@ -97,6 +102,7 @@ while True:
                                         config='--psm 10')  # Ищет 1 символ
 
     for i in range(len(text_data['text'])):
+        # Проверка, что вывод является одним символом
         if len(text_data['text'][i]) == 1 and text_data['text'][i] in ALPHABET:
             (x, y, w, h, conf) = (text_data['left'][i],
                                   text_data['top'][i],
@@ -105,18 +111,18 @@ while True:
                                   text_data['conf'][i])
 
             # Отрисовка сектора с найденным текстом. Отключено, поскольку бесполезно для задачи,
-            # поскольку Tesseract часто возвращает сектор по площади больший, чем сама буква в кадре
+            # так как Tesseract часто возвращает сектор по площади больший, чем сама буква в кадре
             # cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 4)
 
             # Отрисовка распознанной буквы в координатах, переданных из image_to_data()
             if conf > 80:  # Вероятность успеха больше 80%
 
-                # Информация об успешных распознаваняих
+                # Информация об успешных распознаваниях
                 # print(f"Recognized {text_data['text'][i]} with {conf}% confidence")
 
-                img_pil = Image.fromarray(frame)
+                img_pil = Image.fromarray(frame)  # Кадр в PIL формате
                 draw = ImageDraw.Draw(img_pil)
-                draw.text((x - 80, y - 80),
+                draw.text((x - 80, y - 80),  # Размещение распознанной буквы
                           text_data['text'][i],
                           font=UNICODE_FONT,
                           fill=(87, 87, 87, 0))
