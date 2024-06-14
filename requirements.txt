@@ -1,6 +1,6 @@
-opencv-contrib-python
-pytesseract
-tesseract
-pillow
-numpy
-imutils
+opencv-contrib-python  # основной инструмент захвата и обработки кадров
+pytesseract  # базовое решение задачи распознавание
+tesseract  # дублирование пакета
+pillow  # вывод результатов отображения в видеопоток
+numpy  # часть функционала обрезки кадра
+imutils  # часть фнкционала обрезки кадра
