@@ -35,12 +35,13 @@ def crop_by_color(_frame, height, width):
     return cv2.resize(_frame, (width, height))
 
 
-def get_cap():
+def get_cap(cam_number=0):
     """
     Функция get_cap() возвращает объект capture для работы с камерой
+    Необязательный аргумент cam_number позволяет указать желаемую камеру, если их несколько
     """
     try:
-        capture = cv2.VideoCapture(0)
+        capture = cv2.VideoCapture(cam_number)
         _ret, _frame = capture.read()
         height, width, _ = _frame.shape
         if not capture.isOpened():  # Проверка открытия камеры
