@@ -5,14 +5,23 @@
 Подключение необходимых библиотек (pip install -r requirements.txt)
 """
 import sys
+import time
+from logger import Logger
 
-# Импорт необходимых библиотек
-# pip install -r requirements.txt
-import cv2
-import numpy as np
-import pytesseract
-from PIL import ImageFont, ImageDraw, Image
-import imutils
+try:
+    import cv2
+    import numpy as np
+    import pytesseract
+    from PIL import ImageFont, ImageDraw, Image
+    import imutils
+except ModuleNotFoundError:
+    print("Please install required libraries: $ pip install -r requirements.txt")
+    sys.exit(1)
+
+
+# Инициализация логгера
+logs = Logger()
+logs.init_log_file()
 
 
 def crop_by_color(_frame, height, width):
@@ -48,6 +57,7 @@ def get_cap(cam_number=0):
             raise RuntimeError("Camera not found. Check that your camera is connected.")
     except RuntimeError:  # Обработка ситуация отсутствия камеры
         sys.exit(1)
+    logs.log(f"Capture {cam_number} opened", "SUCCESS")
     return capture, height, width
 
 
@@ -74,6 +84,7 @@ def frame_preprocessing(_frame, height, width, resize_multiplier=1.5):
     return crop_by_color(preprocessed_frame, height, width)
 
 
+
 # Инициализация бинарника установленного Tesseract-OCR
 pytesseract.pytesseract.tesseract_cmd = 'Tesseract-OCR/tesseract.exe'
 
@@ -84,10 +95,11 @@ ALPHABET = "ԱԲԳԴԵԶԷԸԹԺԻԼԽԾԿՀՁՂՃՄՅՆՇՈՉՊՋՌՍՎՏՐՑՒ
 UNICODE_FONT = ImageFont.truetype("FreeSerif.ttf", 200)
 
 # Инициализация камеры
-cap, cam_h, cam_w = get_cap()
+cap, cam_h, cam_w = get_cap(1)
 
 # Цикл обработки кадров
 while True:
+    start_time = time.perf_counter()
     ret, frame = cap.read()  # Чтение кадра из потока камеры
 
     frame_p = frame_preprocessing(frame, cam_h, cam_w, 1.5)  # Обработка полученного кадра
@@ -97,7 +109,7 @@ while True:
                                         frame_p,
                                         output_type=pytesseract.Output.DICT,
                                         lang='arm',  # Базовый язык + Дообучение
-                                        config='--psm 10')  # Ищет 1 символ
+                                        config='--psm 10')  # Режим psm 10 оптимизирован для работы с 1 символом
 
     for i in range(len(text_data['text'])):
         if len(text_data['text'][i]) == 1 and text_data['text'][i] in ALPHABET:
@@ -113,9 +125,9 @@ while True:
 
             # Отрисовка распознанной буквы в координатах, переданных из image_to_data()
             if conf > 80:  # Вероятность успеха больше 80%
-
+                end_time = time.perf_counter()
                 # Информация об успешных распознаваняих
-                # print(f"Recognized {text_data['text'][i]} with {conf}% confidence")
+                logs.log(f"Got {text_data['text'][i]} with {conf}% CS | {round(end_time - start_time, 3)}s", "SUCCESS")
 
                 img_pil = Image.fromarray(frame)
                 draw = ImageDraw.Draw(img_pil)
@@ -124,9 +136,6 @@ while True:
                           font=UNICODE_FONT,
                           fill=(87, 87, 87, 0))
                 frame = np.array(img_pil)
-            # Информация об ошибочных распознаваниях
-            # else:
-            #     print(f"Tried to recognize {text_data['text'][i]} but {conf}")
 
     # Отображаются 2 потока: 1) с распознаванием; 2) без, но обработанный
     cv2.imshow('Video', frame)
