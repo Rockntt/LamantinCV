@@ -7,6 +7,7 @@
 import sys
 import time
 from logger import Logger
+from frame_tools
 
 try:
     import cv2
@@ -22,6 +23,50 @@ except ModuleNotFoundError:
 # Инициализация логгера
 logs = Logger()
 logs.init_log_file()
+
+
+def calculate_lat_long(center_latitude, center_longitude, pixel_x, pixel_y, image_width, image_height, altitude):
+  """
+  Вычисляет GPS-координаты точки на снимке, зная координаты центра снимка,
+  пиксельные координаты точки, размер изображения и высоту съемки.
+
+  Args:
+    center_latitude: Широта центра снимка в градусах.
+    center_longitude: Долгота центра снимка в градусах.
+    pixel_x: Координата X точки на снимке в пикселях.
+    pixel_y: Координата Y точки на снимке в пикселях.
+    image_width: Ширина изображения в пикселях.
+    image_height: Высота изображения в пикселях.
+    altitude: Высота съемки в метрах.
+
+  Returns:
+    Кортеж с GPS-координатами точки (широта, долгота) в градусах.
+  """
+
+  # Вычисляем размер пикселя в метрах, используя высоту съемки и размер изображения
+  pixel_size = (image_width * math.tan(math.radians(45))) / altitude
+
+  # Вычисляем расстояние от центра снимка до точки в метрах
+  x_offset = (pixel_x - image_width / 2) * pixel_size
+  y_offset = (pixel_y - image_height / 2) * pixel_size
+
+  # Переводим широту и долготу в радианы
+  center_latitude_rad = math.radians(center_latitude)
+  center_longitude_rad = math.radians(center_longitude)
+
+  # Вычисляем новые координаты в метрах
+  new_latitude_meters = y_offset + center_latitude_rad * 6371000  # 6371000 - средний радиус Земли
+  new_longitude_meters = x_offset + center_longitude_rad * 6371000 * math.cos(center_latitude_rad)
+
+  # Переводим новые координаты в радианы
+  new_latitude_rad = new_latitude_meters / 6371000
+  new_longitude_rad = new_longitude_meters / (6371000 * math.cos(center_latitude_rad))
+
+  # Переводим координаты в градусы
+  new_latitude = math.degrees(new_latitude_rad)
+  new_longitude = math.degrees(new_longitude_rad)
+
+  return (new_latitude, new_longitude)
 
 
 def crop_by_color(_frame, height, width):
@@ -102,7 +147,7 @@ while True:
     start_time = time.perf_counter()
     ret, frame = cap.read()  # Чтение кадра из потока камеры
 
-    frame_p = frame_preprocessing(frame, cam_h, cam_w, 1.5)  # Обработка полученного кадра
+    frame_p = frame_preprocessing(frame, cam_h, cam_w)  # Обработка полученного кадра
 
     # Распознавание текста с помощью библиотеки Tesseract
     text_data = pytesseract.image_to_data(
@@ -143,8 +188,11 @@ while True:
 
     # Завершение работы при нажатии клавиши "q"
     if cv2.waitKey(1) & 0xFF == ord('q'):
+        logs.log("Initiated exiting by pressing 'Q'", "INFO")
         break
 
 # Завершение работы
 cap.release()
+logs.log("Cap released", "INFO")
 cv2.destroyAllWindows()
+logs.log("Program finished", "INFO")
