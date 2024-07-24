@@ -1,13 +1,15 @@
 # pylint: disable=no-name-in-module
 # pylint: disable=no-member
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
 
 """
 Подключение необходимых библиотек (pip install -r requirements.txt)
 """
 import sys
 import time
-from logger import Logger
 import math
+import logger
 
 try:
     import cv2
@@ -21,16 +23,21 @@ except ModuleNotFoundError:
 
 
 # Инициализация логгера
-logs = Logger()
+logs = logger.Logger()
 logs.init_log_file()
 
 
-def calculate_lat_long(center_latitude, center_longitude, pixel_x, pixel_y, image_width, image_height, altitude):
-  """
-  Вычисляет GPS-координаты точки на снимке, зная координаты центра снимка,
-  пиксельные координаты точки, размер изображения и высоту съемки.
+def calculate_lat_long(center_latitude,
+                       center_longitude,
+                       pixel_x, pixel_y,
+                       image_width,
+                       image_height,
+                       altitude):
+    """
+    Вычисляет GPS-координаты точки на снимке, зная координаты центра снимка,
+    пиксельные координаты точки, размер изображения и высоту съемки.
 
-  Args:
+    Args:
     center_latitude: Широта центра снимка в градусах.
     center_longitude: Долгота центра снимка в градусах.
     pixel_x: Координата X точки на снимке в пикселях.
@@ -39,34 +46,34 @@ def calculate_lat_long(center_latitude, center_longitude, pixel_x, pixel_y, imag
     image_height: Высота изображения в пикселях.
     altitude: Высота съемки в метрах.
 
-  Returns:
+    Returns:
     Кортеж с GPS-координатами точки (широта, долгота) в градусах.
-  """
+    """
 
-  # Вычисляем размер пикселя в метрах, используя высоту съемки и размер изображения
-  pixel_size = (image_width * math.tan(math.radians(45))) / altitude
+    # Вычисляем размер пикселя в метрах, используя высоту съемки и размер изображения
+    pixel_size = (image_width * math.tan(math.radians(45))) / altitude
 
-  # Вычисляем расстояние от центра снимка до точки в метрах
-  x_offset = (pixel_x - image_width / 2) * pixel_size
-  y_offset = (pixel_y - image_height / 2) * pixel_size
+    # Вычисляем расстояние от центра снимка до точки в метрах
+    x_offset = (pixel_x - image_width / 2) * pixel_size
+    y_offset = (pixel_y - image_height / 2) * pixel_size
 
-  # Переводим широту и долготу в радианы
-  center_latitude_rad = math.radians(center_latitude)
-  center_longitude_rad = math.radians(center_longitude)
+    # Переводим широту и долготу в радианы
+    center_latitude_rad = math.radians(center_latitude)
+    center_longitude_rad = math.radians(center_longitude)
 
-  # Вычисляем новые координаты в метрах
-  new_latitude_meters = y_offset + center_latitude_rad * 6371000  # 6371000 - средний радиус Земли
-  new_longitude_meters = x_offset + center_longitude_rad * 6371000 * math.cos(center_latitude_rad)
+    # Вычисляем новые координаты в метрах
+    new_latitude_meters = y_offset + center_latitude_rad * 6371000  # 6371000 - средний радиус Земли
+    new_longitude_meters = x_offset + center_longitude_rad * 6371000 * math.cos(center_latitude_rad)
 
-  # Переводим новые координаты в радианы
-  new_latitude_rad = new_latitude_meters / 6371000
-  new_longitude_rad = new_longitude_meters / (6371000 * math.cos(center_latitude_rad))
+    # Переводим новые координаты в радианы
+    new_latitude_rad = new_latitude_meters / 6371000
+    new_longitude_rad = new_longitude_meters / (6371000 * math.cos(center_latitude_rad))
 
-  # Переводим координаты в градусы
-  new_latitude = math.degrees(new_latitude_rad)
-  new_longitude = math.degrees(new_longitude_rad)
+    # Переводим координаты в градусы
+    new_latitude = math.degrees(new_latitude_rad)
+    new_longitude = math.degrees(new_longitude_rad)
 
-  return (new_latitude, new_longitude)
+    return new_latitude, new_longitude
 
 
 def crop_by_color(_frame, height, width):
@@ -129,7 +136,6 @@ def frame_preprocessing(_frame, height, width, resize_multiplier=1.5):
     return crop_by_color(preprocessed_frame, height, width)
 
 
-
 # Инициализация бинарника установленного Tesseract-OCR
 pytesseract.pytesseract.tesseract_cmd = 'Tesseract-OCR/tesseract.exe'
 
@@ -154,7 +160,7 @@ while True:
                                         frame_p,
                                         output_type=pytesseract.Output.DICT,
                                         lang='arm',  # Базовый язык + Дообучение
-                                        config='--psm 10')  # Режим psm 10 оптимизирован для работы с 1 символом
+                                        config='--psm 10')  # psm 10 подходит для 1 симв.
 
     for i in range(len(text_data['text'])):
         if len(text_data['text'][i]) == 1 and text_data['text'][i] in ALPHABET:
@@ -171,8 +177,11 @@ while True:
             # Отрисовка распознанной буквы в координатах, переданных из image_to_data()
             if conf > 80:  # Вероятность успеха больше 80%
                 end_time = time.perf_counter()
+                s_time = round(end_time - start_time, 3)
                 # Информация об успешных распознаваняих
-                logs.log(f"Got {text_data['text'][i]} with {conf}% CS | {round(end_time - start_time, 3)}s", "SUCCESS")
+                logs.log(
+                    f"{text_data['text'][i]} | {conf}% | {s_time}s",
+                    "SUCCESS")
 
                 img_pil = Image.fromarray(frame)
                 draw = ImageDraw.Draw(img_pil)
